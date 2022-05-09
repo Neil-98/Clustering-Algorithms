@@ -1,0 +1,361 @@
+---
+title: "CS512_project1"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+```{r}
+defaultW <- getOption("warn") 
+
+options(warn = -1) 
+```
+
+
+<h1>Import Packages</h1>
+```{r}
+library(factoextra)
+library(ClusterR)
+library(Hmisc)
+library(ggplot2)
+library(reshape2)
+library(mclust)
+library(cluster)
+```
+
+<h1>Load Data</h1>
+```{r}
+data <- read.csv('data/customers.csv')
+```
+
+
+<h1>Exploratory Analysis</h1>
+<h2>Examine Statistics</h2>
+```{r}
+summary(data)
+describe(data)
+```
+<h2>Examine First Few Samples</h2>
+```{r}
+head(data)
+```
+<h2>Compute and Examine Correlation Coefficients</h2>
+```{r}
+corr_mat <- cor(data)
+corr_mat
+```
+<h1>Data Visualization</h1>
+<h2>Heat Map of Correlation Matrix</h2>
+```{r}
+melted_corr_mat <- melt(corr_mat)
+ggplot(data = melted_corr_mat, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
+```
+<h2>Perform PCA and Visualize Bi-Plot</h2>
+```{r}
+#perform PCA
+reduced_data <- princomp(data)
+
+#create biplot to visualize results of PCA
+biplot(reduced_data)
+```
+<h1>Data Preprocessing</h1>
+<h2>Remove Categorical Variables</h2>
+```{r}
+keep_cols <- c("Fresh", "Milk", "Grocery", "Frozen", "Detergents_Paper","Delicatessen")
+good_data <- data[keep_cols]
+head(good_data)
+```
+<h2>Remove Highly Correlated Variable</h2>
+```{r}
+keep_cols <- c("Fresh", "Milk", "Frozen", "Detergents_Paper","Delicatessen")
+good_data <- good_data[keep_cols]
+head(good_data)
+```
+<h1>Clustering Algorithms</h1>
+<h2>K-means Clustering</h2>
+<h3>Building Models</h3>
+```{r}
+# No. of Clusters = 3
+start_time3 <- Sys.time()
+cust_kmeans3 = kmeans(good_data, 3)
+end_time3 <- Sys.time()
+
+# No. of Clusters = 20
+start_time20 <- Sys.time()
+cust_kmeans20 = kmeans(good_data, 20)
+end_time20 <- Sys.time()
+
+# No. of Clusters = 50
+start_time50 <- Sys.time()
+cust_kmeans50 = kmeans(good_data, 50)
+end_time50 <- Sys.time()
+```
+
+<h3>Visualize Results</h3>
+```{r}
+# No. of Clusters = 3
+fviz_cluster(cust_kmeans3, good_data, choose.vars = TRUE, stand = FALSE, show.clust.cent = TRUE)
+
+# No. of Clusters = 20
+fviz_cluster(cust_kmeans20, good_data, choose.vars = TRUE, stand = FALSE, show.clust.cent = TRUE)
+
+# No. of Clusters = 50
+fviz_cluster(cust_kmeans50, good_data, choose.vars = TRUE, stand = FALSE, show.clust.cent = TRUE)
+```
+
+<h3>Compute Metrics</h3>
+<h4>Silhouette Coefficient</h4>
+```{r}
+# No. of Clusters = 3
+Kmeans_sil3 = mean(silhouette(cust_kmeans3$cluster, dist(good_data))[,3])
+print(Kmeans_sil3)
+
+# No. of Clusters = 20
+Kmeans_sil20 = mean(silhouette(cust_kmeans20$cluster, dist(good_data))[,3])
+print(Kmeans_sil20)
+
+# No. of Clusters = 50
+Kmeans_sil50 = mean(silhouette(cust_kmeans50$cluster, dist(good_data))[,3])
+print(Kmeans_sil50)
+```
+<h4>Execution Time</h4>
+```{r}
+# No. of Clusters = 3
+kmeans3_exe_time <- end_time3 - start_time3
+print(kmeans3_exe_time)
+
+# No. of Clusters = 20
+kmeans20_exe_time <- end_time20 - start_time20
+print(kmeans20_exe_time)
+
+# No. of Clusters = 50
+kmeans50_exe_time <- end_time50 - start_time50
+print(kmeans50_exe_time)
+```
+
+<h2>Hierarchical Clustering (DIANA)</h2>
+<h3>Building Models</h3>
+```{r}
+# No. of Clusters = 3
+start_time3 <- Sys.time()
+cust_tree3 = hcut(good_data, k = 3, isdiss = FALSE, hc_func = "diana", hc_metric = "euclidean", stand = FALSE, graph = TRUE)
+end_time3 <- Sys.time()
+
+# No. of Clusters = 20
+start_time20 <- Sys.time()
+cust_tree20 = hcut(good_data, k = 20, isdiss = FALSE, hc_func = "diana", hc_metric = "euclidean", stand = FALSE, graph = TRUE)
+end_time20 <- Sys.time()
+
+# No. of Clusters = 50
+start_time50 <- Sys.time()
+cust_tree50 = hcut(good_data, k = 50, isdiss = FALSE, hc_func = "diana", hc_metric = "euclidean", stand = FALSE, graph = TRUE)
+end_time50 <- Sys.time()
+```
+<h3>Visualize Results</h3>
+```{r}
+# No. of Clusters = 3
+fviz_cluster(cust_tree3)
+
+# No. of Clusters = 20
+fviz_cluster(cust_tree20)
+
+# No. of Clusters = 50
+fviz_cluster(cust_tree50)
+```
+
+<h3>Compute Metrics</h3>
+<h4>Silhouette Coefficient</h4>
+```{r}
+# No. of Clusters = 3
+diana3_sil = mean(silhouette(cust_tree3$cluster, dist(good_data))[,3])
+print(diana3_sil)
+
+# No. of Clusters = 20
+diana20_sil = mean(silhouette(cust_tree20$cluster, dist(good_data))[,3])
+print(diana20_sil)
+
+# No. of Clusters = 50
+diana50_sil = mean(silhouette(cust_tree50$cluster, dist(good_data))[,3])
+print(diana50_sil)
+```
+<h4>Execution Time</h4>
+```{r}
+# No. of Clusters = 3
+diana3_exe_time <- end_time3 - start_time3
+print(diana3_exe_time)
+
+# No. of Clusters = 20
+diana20_exe_time <- end_time20 - start_time20
+print(diana20_exe_time)
+
+# No. of Clusters = 50
+diana50_exe_time <- end_time50 - start_time50
+print(diana50_exe_time)
+```
+
+<h2>Gaussian Mixture Model Clustering</h2>
+<h3>Building Models</h3>
+```{r}
+# No. of Clusters = 3
+start_time3 <- Sys.time()
+gmm3 <- Mclust(good_data, G = 3)
+end_time3 <- Sys.time()
+
+# No. of Clusters = 20
+start_time20 <- Sys.time()
+gmm20 <- Mclust(good_data, G = 20)
+end_time20 <- Sys.time()
+
+# No. of Clusters = 50
+start_time20 <- Sys.time()
+gmm50 <- Mclust(good_data, G = 50)
+end_time20 <- Sys.time()
+```
+
+<h3>Visualize Results</h3>
+```{r}
+# No. of Clusters = 3
+fviz_cluster(gmm3)
+
+# No. of Clusters = 20
+fviz_cluster(gmm20)
+
+# No. of Clusters = 50
+fviz_cluster(gmm50)
+```
+
+<h3>Compute Metrics</h3>
+<h4>Silhouette Coefficient</h4>
+```{r}
+# No. of Clusters = 3
+gmm3_sil <- mean(silhouette(gmm3$classification, dist(good_data))[,3])
+print(gmm3_sil)
+
+# No. of Clusters = 20
+gmm20_sil <- mean(silhouette(gmm20$classification, dist(good_data))[,3])
+print(gmm20_sil)
+
+# No. of Clusters = 50
+gmm50_sil <- mean(silhouette(gmm50$classification, dist(good_data))[,3])
+print(gmm50_sil)
+```
+<h4>Execution Time</h4>
+```{r}
+# No. of Clusters = 3
+gmm3_exe_time <- end_time3 - start_time3
+print(gmm3_exe_time)
+
+# No. of Clusters = 20
+gmm20_exe_time <- end_time20 - start_time20
+print(gmm20_exe_time)
+
+# No. of Clusters = 50
+gmm50_exe_time <- end_time50 - start_time50
+print(gmm50_exe_time)
+```
+
+<h1>Comparison</h1>
+<h2>Comparative Analysis of Silhouette Coefficients</h2>
+<style>
+	.demo {
+		border:1px solid #C0C0C0;
+		border-collapse:collapse;
+		padding:5px;
+	}
+	.demo th {
+		border:1px solid #C0C0C0;
+		padding:5px;
+		background:#F0F0F0;
+	}
+	.demo td {
+		border:1px solid #C0C0C0;
+		padding:5px;
+	}
+</style>
+<table class="demo">
+	<caption><b>Silhouette Coefficients</b></caption>
+	<thead>
+	<tr>
+		<th><br></th>
+		<th>K-means</th>
+		<th>DIANA</th>
+		<th>GMM</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+		<td><b>3 Clusters</b>&nbsp;</td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.3537846</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;"><b>0.6269519</b></pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.1048809</pre></td>
+	</tr>
+	<tr>
+		<td><b>20 Clusters</b></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.2924626</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.3896082</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">-0.03335207</pre></td>
+	</tr>
+	<tr>
+		<td><b>50 Clusters</b></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.2334977</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.242066</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.07322262</pre></td>
+	</tr>
+	</tbody>
+</table>
+
+<h2>Comparative Analysis of Execution Time</h2>
+<style>
+	.demo {
+		border:1px solid #C0C0C0;
+		border-collapse:collapse;
+		padding:5px;
+	}
+	.demo th {
+		border:1px solid #C0C0C0;
+		padding:5px;
+		background:#F0F0F0;
+	}
+	.demo td {
+		border:1px solid #C0C0C0;
+		padding:5px;
+	}
+</style>
+<table class="demo">
+	<caption><b>Execution Time (in seconds)</b></caption>
+	<thead>
+	<tr>
+		<th><br></th>
+		<th>K-means</th>
+		<th>DIANA</th>
+		<th>GMM</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+		<td><b>3 Clusters</b>&nbsp;</td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.003316879</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">10.12301</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.2640531</pre></td>
+	</tr>
+	<tr>
+		<td><b>20 Clusters</b></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.002763987</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">10.41367</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.8423929</pre></td>
+	</tr>
+	<tr>
+		<td><b>50 Clusters</b></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">0.005206108</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">10.77101</pre></td>
+		<td><pre data-ordinal="1" style="font-family: Consolas, &quot;Lucida Console&quot;, monospace, monospace; font-size: 13.8667px; line-height: 1.1; margin-bottom: 0px; color: rgb(0, 0, 0); margin-top: 0px; white-space: pre-wrap;">15.20578</pre></td>
+	</tr>
+	</tbody>
+</table>
+
+```{r}
+options(warn = defaultW)
+```
+
